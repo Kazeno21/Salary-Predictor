@@ -23,7 +23,6 @@ def makecalc():
     etest = j_data['etest']
     spec = 0
     mbap = j_data['mbap']
-    status = 0
     if(j_data['gender']) == 'Male':
         gender = 1
     if(j_data['sscb']) == 'Others':
@@ -35,25 +34,44 @@ def makecalc():
     if(j_data['hscs']) == 'Commerce':
         hscs = 1
     if(j_data['ugt']) == 'Science & Tech':
-        hscs = 2
+        ugt = 2
     if(j_data['ugt']) == 'Others':
-        hscs = 1
+        ugt = 1
     if(j_data['workex']) == 'Yes':
         workex = 1
     if(j_data['spec']) == 'Marketing & HR':
         spec = 1
-    if(j_data['status']) == 'Placed':
-        status = 1
 
     details = [gender, sscp, sscb, hscp, hscb, hscs,
-               ugp, ugt, workex, etest, spec, mbap, status]
+               ugp, ugt, workex, etest, spec, mbap]
     print(details)
     prediction = model.predict(np.asanyarray([details]))
+    prediction /= 12
     print(prediction)
     return jsonify({'prediction': str(prediction)})
+
+
+@app.route('/job', methods=['POST'])
+def makepredic():
+    j_data = request.get_json()
+    jobdescription = j_data['JobDescription']
+
+    jobdescription = [jobdescription]
+    prediction = model1.predict(vec.transform(jobdescription))
+
+    salary = j_data['salary']
+
+    if float(salary) >= float(prediction):
+        return jsonify({'placed': 'Placed', "salary": str(salary), "predicted": str(prediction)})
+    else:
+        return jsonify({'placed': 'Not Placed', "salary": str(salary), "predicted": str(prediction)})
 
 
 if __name__ == '__main__':
     modelfile = 'xgbrpredict.pickle'
     model = p.load(open(modelfile, 'rb'))
+    modelfile1 = 'model.pickle'
+    model1 = p.load(open(modelfile1, 'rb'))
+    vecfile = 'vec.pickle'
+    vec = p.load(open(vecfile, 'rb'))
     app.run(debug=True, host='0.0.0.0')
